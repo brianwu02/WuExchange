@@ -5,7 +5,7 @@ WuExchange is a securities trading platform written in Elixir for educational pu
 A Trader places buy limit / sell limit orders against listed securities. When an order is placed by a Trader,
 the Matching Engine attempts to match an incoming order with an existing order that satisfies our matching criteria.
 When a matching order is found, it is then executed and later transcribed by our TransactionScribe.
-If the order is not matched, it is placed in a queue using a (Price-Time Priority Algorithm)[https://www.cmegroup.com/confluence/display/EPICSANDBOX/Matching+Algorithms]
+If the order is not matched, it is placed in a queue using a [Price-Time Priority Algorithm](https://www.cmegroup.com/confluence/display/EPICSANDBOX/Matching+Algorithms)
 
 The Trader, MatchingEngine and TransactionScribe exist within their own execution runtime using
 GenServer provided the Erlang OTP Framework. Seperating the runtime for each of these processes
@@ -55,6 +55,6 @@ we can think of the erlang virtual machine as the operating system and an erlang
 
 
 ## Additional Resources
-1. (here)[https://www.connamara.com/exchanges/] a description of Exchanges and Matching Engines
+1. [here](https://www.connamara.com/exchanges/) a description of Exchanges and Matching Engines
 https://martinfowler.com/articles/lmax.html
 
