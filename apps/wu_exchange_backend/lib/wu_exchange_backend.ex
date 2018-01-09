@@ -3,16 +3,45 @@ defmodule WuExchangeBackend do
   Documentation for WuExchangeBackend.
   """
 
-  @doc """
-  Hello world.
+  alias WuExchangeBackend.{
+    MatchingEngine,
+    OrderScribe,
+    TransactionScribe,
+  }
 
-  ## Examples
+  # Trader Operations
 
-      iex> WuExchangeBackend.hello
-      :world
-
-  """
-  def hello do
-    :world
+  def buy_limit_order do
   end
+  
+  def sell_limit_order do
+  end
+
+  def cancel_order do
+  end
+  
+  # Level 1 Market Data
+
+  def highest_bid_price do
+  end
+
+  def highest_bid_volume do
+  end
+
+  def highest_ask_price do
+  end
+
+  def highest_ask_volume do
+  end
+
+  def last_price do
+  end
+
+  def last_size do
+  end
+
+  # Level 2 Market Data
+
+
+
 end
