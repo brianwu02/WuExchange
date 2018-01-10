@@ -49,10 +49,15 @@ we can think of the erlang virtual machine as the operating system and an erlang
 ##### Hardware / Software Specs:
 
 Elixir: 1.5.0
+
 Erlang: 20.2
+
 Operating system: macOS
+
 Available memory: 16 GB
+
 CPU Information: Intel(R) Core(TM) i7-4850HQ CPU @ 2.30GHz
+
 Number of Available Cores: 8
 
 ![first benchmark](https://github.com/brianwu02/WuExchange/blob/master/imgs/performance.png)
@@ -89,9 +94,34 @@ ETS data is stored in a seperate process which means our process won't need to a
 be greatly decreased. see examples of this [here](http://theerlangelist.com/article/reducing_maximum_latency)
 
 
-### Trader GenServer Process
+##### Final Thoughts on Performance
+The benchmarking we have done only measures a very small surface area of an example trading system. We have not (yet) benchmarked
+other areas of the system inside the system that may incur noticeable latency.
+
+This is what a end to end trader interaction may look like: A client connects to and maintains state with our
+server over a websocket channel (erlang light weight process). messages are pushed from the browser client to
+our phoenix endpoint, which then passes a message (buy / sell / cancel) to our routing logic layer, which will then
+pass another message to our Matching Engine.
+
+[Browser Client] <-- Websocket over TCP --> [Phoenix Endpoint] --> [Channel / Controller Logic] -> [Matching Engine]
+
+The next logical step would be to benchmark performance between our endpoint and the matching engine (TODO!) and
+determine where we should optimize next. I imagine the matching engine itself will not be the bottlneck, but making
+sure messages are efficiently passed from process to process to be where the real latency issue lie.
 
 ### MatchingEngine GenServer Process
+This is the meat. code [here](https://github.com/brianwu02/WuExchange/blob/master/apps/wu_exchange_backend/lib/wu_exchange_backend/matching_engine.ex) If the algorithm is incorrect, everything else doesn't matter.
+
+Improvements TODO:
+
+1. re-think underlying data structures that represent the order book. currently we are using a map of queues, implemented
+using lists which give us O(1) insert, O(1) matching but O(n) deleting (which would not be acceptable in a real trading system). The
+solution seems to be implement using some sort of balanced tree: red black, [gb_trees](http://www1.erlang.org/doc/man/gb_trees.html)
+or [AVL tree](https://gist.github.com/JohnAZoidberg/87dd44c1281ffb654ff64464f9cc85ab). Using a tree should give us 
+worst case insert, search, and delete performance of O(log n) for a specific price point.
+
+
+### Trader GenServer Process
 
 ### TransactionScribe GenServer Process
 
