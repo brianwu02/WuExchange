@@ -44,6 +44,13 @@ The Erlang Virtual Machine runs as one OS process per available core. Code execu
 light-weight processes inside the erlang virtual machine. 
 we can think of the erlang virtual machine as the operating system and an erlang process as an operating system process.
 
+### Some Early Benchamarking
+
+![first benchmark](https://github.com/brianwu02/WuExchange/blob/master/imgs/performance.png)
+
+
+
+
 
 ### Trader GenServer Process
 
