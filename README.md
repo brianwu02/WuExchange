@@ -81,7 +81,7 @@ Each light-weight process runs it's own garbage collector and garbage collection
 This means that as we continue to insert orders in to our queue, heap space increases and GC criterion will be met causing the process to GC.
 I'm not 100% positive on this, but this could explain why we see run-time spikes amongst multiple runs -- the GC process kicking in and re-sizing the heap.
 
-[insert_1000](https://github.com/brianwu02/WuExchange/blob/master/imgs/insert_1000_orders.png)
+![insert_1000](https://github.com/brianwu02/WuExchange/blob/master/imgs/insert_1000_orders.png)
 
 We could test this hypothesis by warming up the process or by increasing the default heap size of a process and re-running the benchmarks.
 Another thing we could do is side-step the GC issues entirely by implementing (another thing to do!) our data store in [ETS](http://erlang.org/doc/man/ets.html) (Erlang Term Storage).
