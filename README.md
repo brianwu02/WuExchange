@@ -1,6 +1,7 @@
 # WuExchange
 
-WuExchange is a securities trading platform written in Elixir for educational purposes.
+WuExchange is a securities trading platform written in Elixir for educational purposes: learn
+about a bit about markets, and Erlang OTP concepts: GenServer, GenStage, Dynamic Process Registration.
 
 A Trader places buy limit / sell limit orders against listed securities. When an order is placed by a Trader,
 the Matching Engine attempts to match an incoming order with an existing order that satisfies our matching criteria.

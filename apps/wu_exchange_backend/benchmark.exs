@@ -18,8 +18,11 @@ Benchee.run(%{
       MatchingEngine.buy_limit_order(pid: pid_4, trader_id: 1, price_in_cents: 100, quantity: 100)
     {:ok, _} = MatchingEngine.cancel_order(pid_4, order_id_4)
   end,
-  # "delete a buy order from queue of size 100": fn ->
-  # {:ok, _} = MatchingEngine.cancel_order(pid_5, order_id_5)
+  # "insert and delete 100 sell orders" fn ->
+  # results =
+  # 1..10 |> Enum.map(fn(i) ->
+  # {:ok, %Order{order_id: order_id}} = MatchingEngine.sell_limit_order
+  # end)
   # end,
   "insert a buy limit order": fn -> 
     MatchingEngine.buy_limit_order(pid: pid_1, trader_id: 1, price_in_cents: 100, quantity: 100)
