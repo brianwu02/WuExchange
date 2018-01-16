@@ -1,9 +1,9 @@
-defmodule WuExchangeWeb.Mixfile do
+defmodule EctoApp.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :wu_exchange_web,
+      app: :ecto_app,
       version: "0.0.1",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
@@ -11,7 +11,6 @@ defmodule WuExchangeWeb.Mixfile do
       lockfile: "../../mix.lock",
       elixir: "~> 1.4",
       elixirc_paths: elixirc_paths(Mix.env),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers,
       start_permanent: Mix.env == :prod,
       aliases: aliases(),
       deps: deps()
@@ -23,7 +22,7 @@ defmodule WuExchangeWeb.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {WuExchangeWeb.Application, []},
+      mod: {EctoApp.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -37,21 +36,22 @@ defmodule WuExchangeWeb.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:wu_exchange_backend, in_umbrella: true},
-      {:phoenix, "~> 1.3.0"},
-      {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_html, "~> 2.10"},
-      {:phoenix_live_reload, "~> 1.0", only: :dev},
-      {:gettext, "~> 0.11"},
-      {:cowboy, "~> 1.0"},
-      {:ex_twilio, "~> 0.5.0"},
+      {:postgrex, ">= 0.0.0"},
+      {:ecto, "~> 2.1"}
     ]
   end
 
   # Aliases are shortcuts or tasks specific to the current project.
+  # For example, to create, migrate and run the seeds file at once:
+  #
+  #     $ mix ecto.setup
   #
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
-    []
+    [
+      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "test": ["ecto.create --quiet", "ecto.migrate", "test"]
+    ]
   end
 end

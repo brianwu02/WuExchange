@@ -26,6 +26,7 @@ defmodule WuExchangeBackend.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:timex, "~> 3.1"},
       {:benchee, "~> 0.11", only: :dev},
       {:benchee_html, "~> 0.4", only: :dev},
       {:mix_test_watch, "~> 0.3", only: :dev},
