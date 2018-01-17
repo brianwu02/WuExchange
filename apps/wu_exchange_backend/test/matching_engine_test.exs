@@ -1,5 +1,5 @@
 defmodule WuExchangeBackend.MatchingEngineTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   doctest WuExchangeBackend
 
   alias WuExchangeBackend.{
@@ -10,8 +10,9 @@ defmodule WuExchangeBackend.MatchingEngineTest do
   }
 
   setup do
-    {:ok, server_pid} = MatchingEngine.start_link()
-    {:ok, server: server_pid}
+    ticker = :test
+    {:ok, _server_pid} = MatchingEngine.start_link(ticker, 100_000)
+    {:ok, ticker: ticker}
   end
 
   describe "execute_buy_order/3" do
@@ -37,95 +38,95 @@ defmodule WuExchangeBackend.MatchingEngineTest do
 
   describe "Sell Limit Order" do
 
-    test "sell limit orders are stored in active_orders", %{server: pid} do
+    test "sell limit orders are stored in active_orders", %{ticker: ticker} do
     end
 
-    test "creating sell order for 0 cents is rejected", %{server: pid} do
-      assert {:ok, :rejected} = MatchingEngine.sell_limit_order(pid: pid, trader_id: 1, price_in_cents: 0, quantity: 20)
+    test "creating sell order for 0 cents is rejected", %{ticker: ticker} do
+      assert {:ok, :rejected} = MatchingEngine.sell_limit_order(ticker: ticker, trader_id: 1, price_in_cents: 0, quantity: 20)
     end
 
-    test "creatting a sell order for 0 quantity is rejected", %{server: pid} do
-      assert {:ok, :rejected} = MatchingEngine.sell_limit_order(pid: pid, trader_id: 1, price_in_cents: 10, quantity: 0)
+    test "creatting a sell order for 0 quantity is rejected", %{ticker: ticker} do
+      assert {:ok, :rejected} = MatchingEngine.sell_limit_order(ticker: ticker, trader_id: 1, price_in_cents: 10, quantity: 0)
     end
   
-    test "cancel_order/2 removes a sell order from active orders and price_points", %{server: pid} do
+    test "cancel/2 removes a sell order from active orders and price_points", %{ticker: ticker} do
       # create a sell order
-      {:ok, %Order{order_id: order_id} = order} = MatchingEngine.sell_limit_order(pid: pid, trader_id: 1, price_in_cents: 50, quantity: 20)
+      {:ok, %Order{order_id: order_id} = order} = MatchingEngine.sell_limit_order(ticker: ticker, trader_id: 1, price_in_cents: 50, quantity: 20)
       # now cancel it
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
-      assert {:ok, cancelled_order} = MatchingEngine.cancel_order(pid, order_id)
-      assert {:ok, 0} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
+      assert {:ok, cancelled_order} = MatchingEngine.cancel(ticker, order_id)
+      assert {:ok, 0} = MatchingEngine.active_order_count(ticker)
       assert cancelled_order.order_id == order_id
     end
 
-    test "cancel_order/2 removes a partially matched order", %{server: pid} do
+    test "cancel/2 removes a partially matched order", %{ticker: ticker} do
       {:ok, %Order{}} = MatchingEngine.buy_limit_order(
-        pid: pid, trader_id: 1, price_in_cents: 50, quantity: 20
+        ticker: ticker, trader_id: 1, price_in_cents: 50, quantity: 20
       )
       {:ok, %Order{order_id: order_id} = order} = MatchingEngine.sell_limit_order(
-        pid: pid, trader_id: 1, price_in_cents: 50, quantity: 30
+        ticker: ticker, trader_id: 1, price_in_cents: 50, quantity: 30
       )
       # this should result in queuing an order for 50 cents at quantity 10
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
-      assert {:ok, %Order{order_id: canceled_order_id}} = MatchingEngine.cancel_order(pid, order_id)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
+      assert {:ok, %Order{order_id: canceled_order_id}} = MatchingEngine.cancel(ticker, order_id)
       assert canceled_order_id == order_id
-      assert {:ok, 0} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 0} = MatchingEngine.active_order_count(ticker)
     end
 
-    test "cancel_order/2 on an sell_order that does not belong to you is rejected", %{server: pid} do
+    test "cancel/2 on an sell_order that does not belong to you is rejected", %{ticker: ticker} do
       assert {:ok, %Order{}} = MatchingEngine.sell_limit_order(
-        pid: pid, trader_id: 1, price_in_cents: 50, quantity: 20
+        ticker: ticker, trader_id: 1, price_in_cents: 50, quantity: 20
       )
     end
 
-    test "sell x buy match creates a transaction", %{server: pid} do
+    test "sell x buy match creates a transaction", %{ticker: ticker} do
       assert {:ok, %Order{} = sell_order} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 125,
         quantity: 25,
       )
       assert {:ok, %Order{} = buy_order} = MatchingEngine.buy_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 2,
         price_in_cents: 125,
         quantity: 25,
       )
-      assert {:ok, 0} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 0} = MatchingEngine.active_order_count(ticker)
     end
 
-    test "sell x buy match creates a transaction with greater sell quantity", %{server: pid} do
+    test "sell x buy match creates a transaction with greater sell quantity", %{ticker: ticker} do
       assert {:ok, %Order{} = sell_order} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 125,
         quantity: 50,
       )
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
       assert {:ok, %Order{} = buy_order} = MatchingEngine.buy_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 2,
         price_in_cents: 125,
         quantity: 25,
       )
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
     end
 
-    test "sell x buy match creates a transaction with less quantity", %{server: pid} do
+    test "sell x buy match creates a transaction with less quantity", %{ticker: ticker} do
       assert {:ok, %Order{} = sell_order} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 125,
         quantity: 50,
       )
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
       assert {:ok, %Order{} = buy_order} = MatchingEngine.buy_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 2,
         price_in_cents: 125,
         quantity: 100,
       )
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
     end
 
     test "transaction_id is correctly incremented with new order" do
@@ -204,52 +205,52 @@ defmodule WuExchangeBackend.MatchingEngineTest do
       assert :queue.len(price_points_queue) == 0
     end
 
-    test "is rejected when exchange server is halted", %{server: pid} do
+    test "is rejected when exchange server is halted", %{ticker: ticker} do
     end
 
-    test "is rejected when max_price_in_cents is greater than limit", %{server: pid} do
+    test "is rejected when max_price_in_cents is greater than limit", %{ticker: ticker} do
       assert {:reject, _} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 1_000_000,
         quantity: 1,
       )
     end
 
-    test "is queued when there are no existing buy limit orders that match", %{server: pid} do
+    test "is queued when there are no existing buy limit orders that match", %{ticker: ticker} do
       # create a sell limit order
       price_in_cents = 5012
       assert {:ok, _} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: price_in_cents,
         quantity: 25,
       )
       # now get the limit order book
-      {:ok, price_points_list} = MatchingEngine.orders_at_price_point(pid, 5012)
+      {:ok, price_points_list} = MatchingEngine.orders_at_price_point(ticker, 5012)
       assert length(price_points_list) == 1
     end
 
-    test "is queued when there are existing buy limit orders that do not match", %{server: pid} do
+    test "is queued when there are existing buy limit orders that do not match", %{ticker: ticker} do
       assert {:ok, _} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 5012,
         quantity: 25,
       )
       assert {:ok, _} = MatchingEngine.buy_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 125,
         quantity: 25,
       )
       # now get the limit order book
-      {:ok, price_points_list} = MatchingEngine.orders_at_price_point(pid, 5012)
+      {:ok, price_points_list} = MatchingEngine.orders_at_price_point(ticker, 5012)
 
       # assert length(price_points_list) == 2
     end
 
-    test "is executed when there is a matching buy order", %{server: pid} do
+    test "is executed when there is a matching buy order", %{ticker: ticker} do
     end
 
     test "increments transaction_count when a trade is executed" do
@@ -259,95 +260,95 @@ defmodule WuExchangeBackend.MatchingEngineTest do
 
   describe "Buy Limit Order" do
 
-    test "buy limit orders are stored in active_orders", %{server: pid} do
+    test "buy limit orders are stored in active_orders", %{ticker: ticker} do
     end
   
-    test "buy x sell match creates a transaction", %{server: pid} do
+    test "buy x sell match creates a transaction", %{ticker: ticker} do
       assert {:ok, %Order{} = sell_order} = MatchingEngine.buy_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 125,
         quantity: 25,
       )
       assert {:ok, %Order{} = buy_order} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 2,
         price_in_cents: 125,
         quantity: 25,
       )
-      assert {:ok, 0} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 0} = MatchingEngine.active_order_count(ticker)
     end
 
-    test "buy x sell match creates a transaction with greater sell quantity", %{server: pid} do
+    test "buy x sell match creates a transaction with greater sell quantity", %{ticker: ticker} do
       assert {:ok, %Order{} = sell_order} = MatchingEngine.buy_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 125,
         quantity: 50,
       )
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
       assert {:ok, %Order{} = buy_order} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 2,
         price_in_cents: 125,
         quantity: 25,
       )
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
     end
 
-    test "buy x sell match creates a transaction with less quantity", %{server: pid} do
+    test "buy x sell match creates a transaction with less quantity", %{ticker: ticker} do
       assert {:ok, %Order{} = sell_order} = MatchingEngine.buy_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 1,
         price_in_cents: 125,
         quantity: 50,
       )
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
       assert {:ok, %Order{} = buy_order} = MatchingEngine.sell_limit_order(
-        pid: pid,
+        ticker: ticker,
         trader_id: 2,
         price_in_cents: 125,
         quantity: 100,
       )
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
     end
 
-    test "matches when crossed with a corresponding sell order", %{server: pid} do
-      {:ok, %Order{order_id: 1} = sell_order} = MatchingEngine.sell_limit_order(pid: pid, trader_id: 2, price_in_cents: 5000, quantity: 250)
-      {:ok, %Order{} = buy_order} = MatchingEngine.buy_limit_order(pid: pid, trader_id: 1, price_in_cents: 5000, quantity: 100)
+    test "matches when crossed with a corresponding sell order", %{ticker: ticker} do
+      {:ok, %Order{order_id: 1} = sell_order} = MatchingEngine.sell_limit_order(ticker: ticker, trader_id: 2, price_in_cents: 5000, quantity: 250)
+      {:ok, %Order{} = buy_order} = MatchingEngine.buy_limit_order(ticker: ticker, trader_id: 1, price_in_cents: 5000, quantity: 100)
     end
 
-    test "is queued when there are no existing sell limit orders that match", %{server: pid} do
-      {:ok, %Order{} = order} = MatchingEngine.buy_limit_order(pid: pid, trader_id: 2, price_in_cents: 5000, quantity: 250)
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
+    test "is queued when there are no existing sell limit orders that match", %{ticker: ticker} do
+      {:ok, %Order{} = order} = MatchingEngine.buy_limit_order(ticker: ticker, trader_id: 2, price_in_cents: 5000, quantity: 250)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
     end
 
-    test "cancel removes a buy order from active orders and price_points", %{server: pid} do
+    test "cancel removes a buy order from active orders and price_points", %{ticker: ticker} do
       # create a sell order
-      {:ok, %Order{order_id: order_id} = order} = MatchingEngine.buy_limit_order(pid: pid, trader_id: 1, price_in_cents: 50, quantity: 20)
+      {:ok, %Order{order_id: order_id} = order} = MatchingEngine.buy_limit_order(ticker: ticker, trader_id: 1, price_in_cents: 50, quantity: 20)
       # now cancel it
-      assert {:ok, 1} = MatchingEngine.active_order_count(pid)
-      assert {:ok, cancelled_order} = MatchingEngine.cancel_order(pid, order_id)
-      assert {:ok, 0} = MatchingEngine.active_order_count(pid)
+      assert {:ok, 1} = MatchingEngine.active_order_count(ticker)
+      assert {:ok, cancelled_order} = MatchingEngine.cancel(ticker, order_id)
+      assert {:ok, 0} = MatchingEngine.active_order_count(ticker)
       assert cancelled_order.order_id == order_id
     end
 
-    test "cancelling an order that does not exist returns :fail", %{server: pid} do
-      assert {:ok, :fail} = MatchingEngine.cancel_order(pid, 255)
+    test "cancelling an order that does not exist returns :fail", %{ticker: ticker} do
+      assert {:ok, :fail} = MatchingEngine.cancel(ticker, 255)
     end
 
   end
 
 
-  test "Order Book Process Starts", %{server: pid} do
+  test "Order Book Process Starts", %{ticker: ticker} do
   end
 
-  test "cancel an order", %{server: pid} do
+  test "cancel an order", %{ticker: ticker} do
   end
 
 
-  test "can list current order book status", %{server: pid} do
-    assert {:ok, %{} = order_book} = MatchingEngine.status(pid)
+  test "can list current order book status", %{ticker: ticker} do
+    assert {:ok, %{} = order_book} = MatchingEngine.status(ticker)
   end
 
 end

@@ -10,12 +10,11 @@ defmodule WuExchangeBackend.MatchingEngine do
     CompletedTransaction,
   }
 
-
-  def start_link(name \\ "WUXC", max_price_in_cents \\ 100_000) do
+  def start_link(ticker, max_price_in_cents) when is_number(max_price_in_cents) and is_atom(ticker) do
     price_points =
       Enum.reduce(0..max_price_in_cents, %{}, fn(x, acc) -> Map.put(acc, x, :queue.new()) end)
     order_book = %LimitOrderBook{
-      name: name,
+      name: ticker,
       price_points: Enum.reduce(0..max_price_in_cents, %{}, fn(x, acc) ->
         # insert a queue at each price point
         Map.put(acc, x, :queue.new())
@@ -31,7 +30,12 @@ defmodule WuExchangeBackend.MatchingEngine do
     }
 
     # initialize data structure that will keep track of Buy Limit Orders
-    GenServer.start_link(__MODULE__, order_book, [])
+    name = via_tuple(ticker)
+    GenServer.start_link(__MODULE__, order_book, name: name)
+  end
+
+  defp via_tuple(ticker) do
+    {:via, Registry, {:matching_engine_registry, ticker}}
   end
 
   # Client Interface
@@ -42,44 +46,46 @@ defmodule WuExchangeBackend.MatchingEngine do
 
   @doc """
   """
-  def status(pid) do
-    GenServer.call(pid, :status)
+  def status(ticker) do
+    GenServer.call(via_tuple(ticker), :status)
   end
 
   @doc """
   return count of active orders
   """
-  def active_order_count(pid), do: GenServer.call(pid, {:active_order_count})
+  def active_order_count(ticker) do
+    GenServer.call(via_tuple(ticker), {:active_order_count})
+  end
 
   @doc """
   Returns a List of Orders at a specific price point in cents
   """
-  def orders_at_price_point(pid, price_point) when is_number(price_point) do
-    GenServer.call(pid, {:orders_at_price_point, price_point})
+  def orders_at_price_point(ticker, price_point) when is_number(price_point) do
+    GenServer.call(via_tuple(ticker), {:orders_at_price_point, price_point})
   end
 
   @doc """
   create a Sell Limit Order
   """
-  def sell_limit_order(pid: pid, trader_id: _t_id, price_in_cents: price_in_cents, quantity: quantity
+  def sell_limit_order(ticker: ticker, trader_id: _t_id, price_in_cents: price_in_cents, quantity: quantity
   ) when price_in_cents <= 0 or quantity <= 0 do
     {:ok, :rejected}
   end
-  def sell_limit_order(pid: pid, trader_id: t_id, price_in_cents: price_in_cents, quantity: q) do
+  def sell_limit_order(ticker: ticker, trader_id: t_id, price_in_cents: price_in_cents, quantity: q) do
     order = %Order{trader_id: t_id, side: 1, price_in_cents: price_in_cents, quantity: q}
-    GenServer.call(pid, {:limit_order, order})
+    GenServer.call(via_tuple(ticker), {:limit_order, order})
   end
 
   @doc """
   Create a Buy Limit Order
   """
-  def buy_limit_order(pid: pid, trader_id: t_id, price_in_cents: price_in_cents, quantity: q) do
+  def buy_limit_order(ticker: ticker, trader_id: t_id, price_in_cents: price_in_cents, quantity: q) do
     order = %Order{trader_id: t_id, side: 0, price_in_cents: price_in_cents, quantity: q}
-    GenServer.call(pid, {:limit_order, order})
+    GenServer.call(via_tuple(ticker), {:limit_order, order})
   end
 
-  def cancel_order(pid, order_id) when is_integer(order_id) and is_pid(pid) do
-    GenServer.call(pid, {:cancel_order, order_id})
+  def cancel(ticker, order_id) when is_integer(order_id) do
+    GenServer.call(via_tuple(ticker), {:cancel_order, order_id})
   end
 
   # Server Interface
