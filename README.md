@@ -121,18 +121,11 @@ solution seems to be implement using some sort of balanced tree: red black, [gb_
 or [AVL tree](https://gist.github.com/JohnAZoidberg/87dd44c1281ffb654ff64464f9cc85ab). Using a tree should give us 
 worst case insert, search, and delete performance of O(log n) for a specific price point.
 
-
-### Trader GenServer Process
-
-### TransactionScribe GenServer Process
-
-### OrderScribe GenServer Process
-
-
 ## Additional Resources
 1. [here](https://www.connamara.com/exchanges/) a description of Exchanges and Matching Engines
 2. [Read this for much better explanation of erlang gc](https://hamidreza-s.github.io/erlang%20garbage%20collection%20memory%20layout%20soft%20realtime/2015/08/24/erlang-garbage-collection-details-and-why-it-matters.html)
 3. [single threaded matching example by martin folower](https://martinfowler.com/articles/lmax.html)
 4. [Order Book Imp in Python](https://github.com/kmanley/orderbook/blob/master/orderbook.py)
 5. [Order Book Imp in Go](https://github.com/kmanley/gorderbook)
+6. [Trading Summary (this is good)](https://blog.headlandstech.com/2017/08/03/quantitative-trading-summary/)
 
